@@ -1,0 +1,6 @@
+@CryptoMonitoring.NotificationService_HostAddress = http://localhost:5270
+
+GET {{CryptoMonitoring.NotificationService_HostAddress}}/weatherforecast/
+Accept: application/json
+
+###

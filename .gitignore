@@ -1,0 +1,17 @@
+.vs/
+*.suo
+*.user
+*.userosscache
+*.sln.docstates
+
+bin/
+obj/
+*.dll
+*.exe
+
+*.log
+**/Dockerfile
+**/docker-compose.yml
+
+*.DS_Store
+Thumbs.db

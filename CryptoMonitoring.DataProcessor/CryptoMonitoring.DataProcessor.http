@@ -1,0 +1,6 @@
+@CryptoMonitoring.DataProcessor_HostAddress = http://localhost:5285
+
+GET {{CryptoMonitoring.DataProcessor_HostAddress}}/weatherforecast/
+Accept: application/json
+
+###

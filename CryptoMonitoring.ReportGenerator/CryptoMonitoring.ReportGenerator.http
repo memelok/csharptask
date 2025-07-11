@@ -1,0 +1,6 @@
+@CryptoMonitoring.ReportGenerator_HostAddress = http://localhost:5018
+
+GET {{CryptoMonitoring.ReportGenerator_HostAddress}}/weatherforecast/
+Accept: application/json
+
+###
