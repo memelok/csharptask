@@ -19,36 +19,56 @@ namespace CryptoMonitoring.DataGenerator
         private readonly ICryptoApiClient _api;
         private readonly IModel _channel;
         private readonly int _interval;
+        private readonly ILogger<MarketDataGenerator> _log;
 
         public MarketDataGenerator(
             ICryptoApiClient api,
             IModel channel,
-            IConfiguration cfg)
+            IConfiguration cfg,
+            ILogger<MarketDataGenerator> log)
         {
             _api = api;
             _channel = channel;
             _interval = cfg.GetValue<int>("Generator:IntervalSeconds");
+            _log = log;
         }
 
         protected override async Task ExecuteAsync(CancellationToken stoppingToken)
         {
+            _log.LogInformation("🟢 MarketDataGenerator started");
+
             while (!stoppingToken.IsCancellationRequested)
             {
-                var markets = await _api.GetMarketsAsync(stoppingToken);
 
-                var json = JsonSerializer.Serialize(markets);
-                var body = Encoding.UTF8.GetBytes(json);
 
-                var props = _channel.CreateBasicProperties();
-                props.ContentType = "application/json";
-                props.DeliveryMode = 2;  
+                try
+                {
+                    var markets = await _api.GetMarketsAsync(stoppingToken);
+                    foreach (var market in markets)
+                    {
+                        var json = JsonSerializer.Serialize(markets);
+                        var body = Encoding.UTF8.GetBytes(json);
 
-                _channel.BasicPublish(
-                    exchange: ExchangeName,
-                    routingKey: RoutingKey,
-                    basicProperties: props,
-                    body: body
-                );
+                        var props = _channel.CreateBasicProperties();
+                        props.ContentType = "application/json";
+                        props.DeliveryMode = 2;
+
+                        _channel.BasicPublish(
+                            exchange: ExchangeName,
+                            routingKey: RoutingKey,
+                            basicProperties: props,
+                            body: body);
+
+                        _log.LogInformation("📤 Published market: {Symbol}", market.Symbol);
+                    }
+                    _log.LogInformation("✔ Published {Count} entries", markets.Count());
+                }
+                catch (Exception ex) 
+                {
+                    _log.LogError(ex, "❌ Failed to publish market data");
+                }
+
+
 
                 await Task.Delay(TimeSpan.FromSeconds(_interval), stoppingToken);
             }
