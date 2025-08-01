@@ -46,7 +46,7 @@ namespace CryptoMonitoring.DataGenerator
                     var markets = await _api.GetMarketsAsync(stoppingToken);
                     foreach (var market in markets)
                     {
-                        var json = JsonSerializer.Serialize(markets);
+                        var json = JsonSerializer.Serialize(market); // ✔️ правильно: один объект
                         var body = Encoding.UTF8.GetBytes(json);
 
                         var props = _channel.CreateBasicProperties();
