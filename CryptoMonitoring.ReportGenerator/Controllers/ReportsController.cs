@@ -9,35 +9,62 @@ namespace CryptoMonitoring.ReportGenerator.Controllers
     [Route("api/reports")]
     public class ReportsController : ControllerBase
     {
+        private readonly ILogger<ReportsController> _logger;
         private readonly IReportService _reportService;
 
-        public ReportsController(IReportService reportService)
-            => _reportService = reportService;
+        public ReportsController(ILogger<ReportsController> logger, IReportService reportService)
+        {
+            _logger = logger;
+            _reportService = reportService;
+        }
 
         [HttpGet("daily")]
         public async Task<IActionResult> GetDaily([FromQuery] DateTime date)
         {
-            var req = new ReportRequest
+            _logger.LogInformation("Daily report requested for {Date}", date);
+
+            try
             {
-                Type = ReportType.Daily,
-                Date = date
-            };
-            var result = await _reportService.GenerateAsync(req);
-            return File(result.Stream, result.ContentType, result.FileName);
+                var req = new ReportRequest
+                {
+                    Type = ReportType.Daily,
+                    Date = date
+                };
+                var result = await _reportService.GenerateAsync(req);
+                return File(result.Stream, result.ContentType, result.FileName);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error generating daily report");
+                return StatusCode(500, ex.ToString());
+            }
         }
 
         [HttpGet("dashboard")]
-        public async Task<IActionResult> GetDashboard(
-            [FromQuery] DateTime start, [FromQuery] DateTime end)
+        public async Task<IActionResult> GetDashboard([FromQuery] DateTime start, [FromQuery] DateTime end)
         {
-            var req = new ReportRequest
+            _logger.LogInformation("Dashboard requested: {Start} - {End}", start, end);
+
+            try
             {
-                Type = ReportType.Dashboard,
-                StartDate = start,
-                EndDate = end
-            };
-            var html = await _reportService.GenerateDashboardAsync(req);
-            return Content(html, "text/html");
+                var req = new ReportRequest
+                {
+                    Type = ReportType.Dashboard,
+                    StartDate = start,
+                    EndDate = end
+                };
+
+                _logger.LogInformation("Calling GenerateDashboardAsync");
+                var html = await _reportService.GenerateDashboardAsync(req);
+                _logger.LogInformation("Dashboard HTML generated");
+
+                return Content(html, "text/html");
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error generating dashboard");
+                return StatusCode(500, ex.ToString());
+            }
         }
     }
 }

@@ -21,8 +21,8 @@ namespace CryptoMonitoring.ReportGenerator.Builders
             if (request.CustomParams == null || !request.CustomParams.TryGetValue("PortfolioId", out var pid))
                 throw new ArgumentException("PortfolioId is required");
 
-            // 
-            // по Symbol
+            // Здесь можно подтянуть состав портфеля из Mongo или другого хранилища
+            // Для примера — возьмём все Snapshot и сгруппируем по Symbol:
             var data = await _db.Snapshots
                 .Where(s => s.Timestamp.Date == DateTime.UtcNow.Date)
                 .ToListAsync();
@@ -37,6 +37,7 @@ namespace CryptoMonitoring.ReportGenerator.Builders
             ws.Cells["B1"].Value = "Allocation%";
             ws.Cells["C1"].Value = "CurrentValue";
 
+            // ?равномерная аллокация
             var symbols = data.Select(d => d.Symbol).Distinct().ToArray();
             var equalPct = 1m / symbols.Length;
             int row = 2;

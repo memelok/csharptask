@@ -9,5 +9,15 @@
         public decimal PreviousPrice { get; set; }
         public double Change24h { get; set; }
         public DateTime Timestamp { get; set; }
+
+        public Snapshot()
+        {
+            Timestamp = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Utc);
+        }
+        public void Normalize()
+        {
+            Timestamp = DateTime.SpecifyKind(Timestamp, DateTimeKind.Utc);
+        }
+
     }
 }

@@ -8,5 +8,13 @@
         public DateTime? EndDate { get; set; }
         public string[]? Symbols { get; set; }
         public Dictionary<string, string>? CustomParams { get; set; }
+
+        public void NormalizeDatesToUtc()
+        {
+            Date = Date?.ToUtc();
+            StartDate = StartDate?.ToUtc();
+            EndDate = EndDate?.ToUtc();
+        }
+
     }
 }
