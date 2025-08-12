@@ -1,17 +1,48 @@
+using CryptoMonitoring.NotificationService;
+using CryptoMonitoring.NotificationService.Data;
+using CryptoMonitoring.NotificationService.Infrastructure;
+using CryptoMonitoring.NotificationService.Services;
+using Microsoft.EntityFrameworkCore;
+using MongoDB.Driver;
+using RazorLight;
+using CryptoMonitoring.NotificationService.Hubs;
+using Microsoft.AspNetCore.SignalR;
+
+using Serilog;
+
 var builder = WebApplication.CreateBuilder(args);
+var config = builder.Configuration;
 
-// Add services to the container.
+builder.Host.UseSerilog((ctx, cfg) =>
+{
+    cfg.ReadFrom.Configuration(ctx.Configuration);
+});
 
-builder.Services.AddControllers();
+builder.Services.Configure<EmailOptions>(config.GetSection("Email"));
+builder.Services.Configure<RabbitMqOptions>(config.GetSection("RabbitMq"));
+
+builder.Services.AddDbContext<NotificationsDbContext>(opt =>
+    opt.UseNpgsql(config.GetConnectionString("Postgres")));
+
+builder.Services.AddSingleton<IMongoClient>(
+    _ => new MongoClient(config.GetConnectionString("Mongo")));
+
+builder.Services.AddSingleton<IRazorLightEngine>(new RazorLightEngineBuilder()
+    .UseEmbeddedResourcesProject(typeof(NotificationService))
+    .UseMemoryCachingProvider()
+    .Build());
+
+builder.Services.AddHttpClient<WebhookSender>();
+builder.Services.AddTransient<IChannelSender, EmailSender>();
+builder.Services.AddTransient<IChannelSender, WebhookSender>();
+
+builder.Services.AddTransient<IRabbitMqConnectionFactory, RabbitMqConnectionFactory>();
+
+builder.Services.AddScoped<INotificationService, NotificationService>();
+builder.Services.AddHostedService<NotificationWorker>();
+
+builder.Services.AddSignalR();
 
 var app = builder.Build();
-
-// Configure the HTTP request pipeline.
-
-app.UseHttpsRedirection();
-
-app.UseAuthorization();
-
-app.MapControllers();
-
+app.MapHub<NotificationsHub>("/notifications");
 app.Run();

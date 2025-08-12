@@ -17,7 +17,11 @@ namespace CryptoMonitoring.ReportGenerator.Builders
 
         public async Task<MemoryStream> BuildAsync(ReportRequest request)
         {
-            var date = request.Date?.Date ?? throw new ArgumentException("Date is required");
+            if (request.Date == null)
+                throw new ArgumentException("Date is required");
+
+            var date = DateTime.SpecifyKind(request.Date.Value.Date, DateTimeKind.Utc);
+
             var data = await _db.Snapshots
                 .Where(s => s.Timestamp.Date == date)
                 .OrderBy(s => s.Timestamp)

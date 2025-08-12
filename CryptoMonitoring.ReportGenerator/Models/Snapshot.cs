@@ -1,7 +1,12 @@
-﻿namespace CryptoMonitoring.ReportGenerator.Models
+﻿using System.ComponentModel.DataAnnotations;
+using System.ComponentModel.DataAnnotations.Schema;
+
+namespace CryptoMonitoring.ReportGenerator.Models
 {
     public class Snapshot
     {
+        [Key]
+        [DatabaseGenerated(DatabaseGeneratedOption.Identity)]
         public Guid Id { get; set; }
         public string Symbol { get; set; } = null!;
         public string Name { get; set; } = null!;

@@ -1,6 +1,7 @@
-﻿using Microsoft.AspNetCore.Mvc;
-using CryptoMonitoring.ReportGenerator.Models;
+﻿using CryptoMonitoring.ReportGenerator.Models;
 using CryptoMonitoring.ReportGenerator.Services;
+using Microsoft.AspNetCore.Mvc;
+using static System.Runtime.InteropServices.JavaScript.JSType;
 
 
 namespace CryptoMonitoring.ReportGenerator.Controllers
@@ -30,6 +31,9 @@ namespace CryptoMonitoring.ReportGenerator.Controllers
                     Type = ReportType.Daily,
                     Date = date
                 };
+
+                req.NormalizeDatesToUtc();
+
                 var result = await _reportService.GenerateAsync(req);
                 return File(result.Stream, result.ContentType, result.FileName);
             }
@@ -53,6 +57,9 @@ namespace CryptoMonitoring.ReportGenerator.Controllers
                     StartDate = start,
                     EndDate = end
                 };
+
+                req.NormalizeDatesToUtc();
+
 
                 _logger.LogInformation("Calling GenerateDashboardAsync");
                 var html = await _reportService.GenerateDashboardAsync(req);

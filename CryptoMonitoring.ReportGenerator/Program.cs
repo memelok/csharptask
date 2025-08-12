@@ -5,6 +5,7 @@ using Microsoft.EntityFrameworkCore;
 using RazorLight;
 using Serilog;
 using Microsoft.AspNetCore.Diagnostics;
+using EFCore.NamingConventions;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -25,7 +26,8 @@ builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddHealthChecks();
 
 builder.Services.AddDbContext<ReportDbContext>(options =>
-    options.UseNpgsql(builder.Configuration.GetConnectionString("DefaultConnection")));
+    options.UseNpgsql(builder.Configuration.GetConnectionString("DefaultConnection"))
+           .UseSnakeCaseNamingConvention().LogTo(Console.WriteLine, LogLevel.Information));
 
 builder.Services.AddSingleton<IRazorLightEngine>(new RazorLightEngineBuilder()
     .UseEmbeddedResourcesProject(typeof(ReportService))

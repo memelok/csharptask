@@ -1,4 +1,7 @@
-﻿namespace CryptoMonitoring.ReportGenerator.Models
+﻿using System;
+using CryptoMonitoring.ReportGenerator.Common;
+
+namespace CryptoMonitoring.ReportGenerator.Models
 {
     public class ReportRequest
     {
@@ -14,6 +17,7 @@
             Date = Date?.ToUtc();
             StartDate = StartDate?.ToUtc();
             EndDate = EndDate?.ToUtc();
+
         }
 
     }

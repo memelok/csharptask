@@ -16,13 +16,28 @@ namespace CryptoMonitoring.ReportGenerator.Data
             modelBuilder.Entity<Snapshot>(b =>
             {
                 b.ToTable("Snapshots");
+
                 b.HasKey(x => x.Id);
-                b.Property(x => x.Symbol).HasMaxLength(16).IsRequired();
-                b.Property(x => x.Name).HasMaxLength(64).IsRequired();
-                b.Property(x => x.CurrentPrice).HasColumnType("numeric(18,8)");
-                b.Property(x => x.PreviousPrice).HasColumnType("numeric(18,8)");
-                b.Property(x => x.Change24h).HasColumnType("double precision");
-                b.Property(x => x.Timestamp).IsRequired();
+                b.Property(x => x.Id)
+                 .HasColumnName("Id");
+
+                b.Property(x => x.Symbol)
+                 .HasColumnName("Symbol");
+
+                b.Property(x => x.Name)
+                 .HasColumnName("Name");
+
+                b.Property(x => x.CurrentPrice)
+                 .HasColumnName("CurrentPrice");
+
+                b.Property(x => x.PreviousPrice)
+                 .HasColumnName("PreviousPrice");
+
+                b.Property(x => x.Change24h)
+                 .HasColumnName("Change24h");
+
+                b.Property(x => x.Timestamp)
+                 .HasColumnName("Timestamp");
             });
         }
     }
