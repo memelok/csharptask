@@ -1,10 +1,12 @@
-﻿using System.Text.Json.Serialization;
+﻿using MongoDB.Bson.Serialization.Attributes;
+using System.Text.Json.Serialization;
 
 namespace CryptoMonitoring.DataProcessor.Models
 {       
     public class CoinMarket
     {
             [JsonPropertyName("id")]
+            [BsonIgnore]
             public string Id { get; set; }
 
             [JsonPropertyName("symbol")]

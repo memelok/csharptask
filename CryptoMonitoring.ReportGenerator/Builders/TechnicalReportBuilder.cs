@@ -1,8 +1,9 @@
 ﻿using CryptoMonitoring.ReportGenerator.Data;
 using CryptoMonitoring.ReportGenerator.Models;
 using CryptoMonitoring.ReportGenerator.Utils;
-using OfficeOpenXml;
-using OfficeOpenXml.Drawing.Chart;
+
+using ClosedXML.Excel;
+
 using Microsoft.EntityFrameworkCore;
 
 
@@ -30,14 +31,14 @@ namespace CryptoMonitoring.ReportGenerator.Builders
                 .ToListAsync();
 
             var ms = new MemoryStream();
-            ExcelPackage.License.SetNonCommercialPersonal("CryptoMonitoring");
-            using var pkg = new ExcelPackage();
-            var ws = pkg.Workbook.Worksheets.Add("Technical Analysis");
+            using var wb = new XLWorkbook();
+            var ws = wb.Worksheets.Add("Technical Analysis");
 
-            ws.Cells["A1"].Value = "Timestamp";
-            ws.Cells["B1"].Value = "Symbol";
-            ws.Cells["C1"].Value = "ClosePrice";
-            ws.Cells["D1"].Value = "SMA(10)";
+            ws.Cell(1, 1).Value = "Timestamp";
+            ws.Cell(1, 2).Value = "Symbol";
+            ws.Cell(1, 3).Value = "ClosePrice";
+            ws.Cell(1, 4).Value = "SMA(10)";
+            ws.Row(1).Style.Font.SetBold();
 
             int row = 2;
             foreach (var grp in data.GroupBy(x => x.Symbol))
@@ -48,20 +49,15 @@ namespace CryptoMonitoring.ReportGenerator.Builders
                 for (int i = 0; i < grp.Count(); i++)
                 {
                     var item = grp.ElementAt(i);
-                    ws.Cells[row, 1].Value = item.Timestamp;
-                    ws.Cells[row, 2].Value = item.Symbol;
-                    ws.Cells[row, 3].Value = (double)item.CurrentPrice;
-                    ws.Cells[row, 4].Value = (i < sma.Count ? (double)sma[i] : (double?)null);
+                    ws.Cell(row, 1).Value = item.Timestamp;
+                    ws.Cell(row, 2).Value = item.Symbol;
+                    ws.Cell(row, 3).Value = (double)item.CurrentPrice;
+                    ws.Cell(row, 4).Value = (i < sma.Count ? (double?)sma[i] : null);
                     row++;
                 }
             }
 
-            var chart = ws.Drawings.AddChart("smaChart", eChartType.Line);
-            chart.SetPosition(1, 0, 5, 0);
-            chart.Title.Text = "SMA(10) by Symbol";
-            chart.Series.Add($"D2:D{row - 1}", $"A2:A{row - 1}");
-
-            pkg.SaveAs(ms);
+            wb.SaveAs(ms);
             ms.Position = 0;
             return ms;
         }

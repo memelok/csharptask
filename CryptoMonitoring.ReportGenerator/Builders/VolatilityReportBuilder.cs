@@ -1,8 +1,10 @@
 ﻿using CryptoMonitoring.ReportGenerator.Data;
 using CryptoMonitoring.ReportGenerator.Models;
-using OfficeOpenXml;
 using CryptoMonitoring.ReportGenerator.Utils;
 using Microsoft.EntityFrameworkCore;
+
+using ClosedXML.Excel;
+
 
 
 namespace CryptoMonitoring.ReportGenerator.Builders
@@ -28,12 +30,13 @@ namespace CryptoMonitoring.ReportGenerator.Builders
                 .ToListAsync();
 
             var ms = new MemoryStream();
-            ExcelPackage.License.SetNonCommercialPersonal("CryptoMonitoring");
-            using var pkg = new ExcelPackage();
-            var ws = pkg.Workbook.Worksheets.Add("Volatility");
+                        using var wb = new XLWorkbook();
+            var ws = wb.Worksheets.Add("Volatility");
 
-            ws.Cells["A1"].Value = "Symbol";
-            ws.Cells["B1"].Value = "StdDev";
+            ws.Cell(1, 1).Value = "Symbol";
+            ws.Cell(1, 2).Value = "StdDev";
+            ws.Row(1).Style.Font.SetBold();
+
 
             int row = 2;
             foreach (var grp in data.GroupBy(s => s.Symbol))
@@ -54,12 +57,12 @@ namespace CryptoMonitoring.ReportGenerator.Builders
 
 
 
-                ws.Cells[row, 1].Value = grp.Key;
-                ws.Cells[row, 2].Value = stdDev;
+                ws.Cell(row, 1).Value = grp.Key;
+                ws.Cell(row, 2).Value = stdDev;
                 row++;
             }
 
-            pkg.SaveAs(ms);
+            wb.SaveAs(ms);
             ms.Position = 0;
             return ms;
         }

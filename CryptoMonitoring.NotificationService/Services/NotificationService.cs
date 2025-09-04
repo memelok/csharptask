@@ -1,10 +1,9 @@
 ﻿using CryptoMonitoring.NotificationService.Data;
 using CryptoMonitoring.NotificationService.Models;
-using System.Text.Json;
 using MongoDB.Driver;
-using RazorLight;
 using Microsoft.EntityFrameworkCore;
-
+using Microsoft.Extensions.Logging;
+using System.Text.Json;
 
 namespace CryptoMonitoring.NotificationService.Services
 {
@@ -12,21 +11,19 @@ namespace CryptoMonitoring.NotificationService.Services
     {
         private readonly NotificationsDbContext _pg;
         private readonly IMongoCollection<NotificationLog> _logCollection;
-        private readonly IRazorLightEngine _razor;
         private readonly IEnumerable<IChannelSender> _senders;
+        private readonly ILogger<NotificationService> _logger;
 
         public NotificationService(
             NotificationsDbContext pgContext,
             IMongoClient mongoClient,
-            IRazorLightEngine razor,
-            IEnumerable<IChannelSender> senders)
+            IEnumerable<IChannelSender> senders,
+            ILogger<NotificationService> logger)
         {
             _pg = pgContext;
-            _logCollection = mongoClient
-                .GetDatabase("notifications")
-                .GetCollection<NotificationLog>("logs");
-            _razor = razor;
+            _logCollection = mongoClient.GetDatabase("notifications").GetCollection<NotificationLog>("logs");
             _senders = senders;
+            _logger = logger;
         }
 
         public async Task PublishAsync<TEvent>(NotificationEnvelope envelope) where TEvent : class
@@ -35,12 +32,16 @@ namespace CryptoMonitoring.NotificationService.Services
                 .Where(s => s.EventType == envelope.EventType && s.IsActive)
                 .ToListAsync();
 
+            if (subs.Count == 0)
+            {
+                _logger.LogInformation("No active subscriptions for EventType={EventType}", envelope.EventType);
+                return;
+            }
+
             foreach (var sub in subs)
             {
-                var templateKey = $"{envelope.EventType}_{sub.Channel}.cshtml";
-                var model = JsonSerializer.Deserialize<TEvent>(envelope.Payload)!;
-                var body = await _razor.CompileRenderAsync(templateKey, model);
                 var subject = envelope.EventType;
+                var body = envelope.Payload;
 
                 var log = new NotificationLog
                 {
@@ -53,17 +54,31 @@ namespace CryptoMonitoring.NotificationService.Services
                 try
                 {
                     var sender = _senders.First(x => x.Channel == sub.Channel);
+                    _logger.LogInformation("Sending {EventType} via {Channel} to {Recipient}", envelope.EventType, sub.Channel, sub.Recipient);
                     await sender.SendAsync(sub.Recipient, subject, body);
                     log.Success = true;
                 }
                 catch (Exception ex)
                 {
+                    _logger.LogError(ex, "Failed to send {EventType} via {Channel} to {Recipient}", envelope.EventType, sub.Channel, sub.Recipient);
                     log.Success = false;
                     log.ErrorMessage = ex.Message;
                 }
 
                 await _logCollection.InsertOneAsync(log);
             }
+        }
+
+        public async Task AlertAsync(AlertTriggeredEvent alert, CancellationToken ct = default)
+        {
+            var payload = JsonSerializer.Serialize(alert);
+
+            var envelope = new NotificationEnvelope(
+                eventType: nameof(AlertTriggeredEvent),
+                payload: payload
+            );
+
+            await PublishAsync<AlertTriggeredEvent>(envelope);
         }
     }
 }
